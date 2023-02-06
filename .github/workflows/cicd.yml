@@ -1,37 +1,21 @@
-name: CI-CD
+name: Input Example
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
-  build:
+  run:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v2
+    - name: Ask for input
+      id: input_step
+      uses: actions/input@v2
       with:
-        push: true
-        tags: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:${{ env.TAG }}
+        name: input_example
+        message: Please enter a string
+        actions: [manual-intervention]
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    if: success()
-    steps:
-    - name: Deploy to EC2 instance
-      uses: aws-actions/amazon-ec2-instance-connect@v1
-      with:
-        host: ${{ env.EC2_IP_ADDRESS }}
-        username: ec2-user
-        private-key: ${{ secrets.EC2_PRIVATE_KEY }}
-        command: |
-          sudo systemctl stop my-container
-          sudo docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:${{ env.TAG }}
-          sudo docker run -d --name my-container -p 3000:3000 ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:${{ env.TAG }}
-          sudo systemctl start my-container
+    - name: Echo input
+      run: echo "The input is: ${{ steps.input_step.outputs.input_example }}"
